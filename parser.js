@@ -93,6 +93,7 @@ $(document).ready(function () {
         comment: 'Updated via toggl-to-jira https://chrome.google.com/webstore/detail/toggl-to-jira/anbbcnldaagfjlhbfddpjlndmjcgkdpf',
         mergeEntriesBy: 'no-merge',
         jumpToToday: false,
+        roundMinutes: 0,
     }, function (items) {
         config = items;
         console.log('Fetching toggl entries for today.', 'Jira url: ', config.url, config);
@@ -197,7 +198,7 @@ function fetchEntries() {
         entries.forEach(function (entry) {
             entry.description = entry.description || 'no-description';
             var issue = entry.description.split(' ')[0];
-            var togglTime = entry.duration;
+            var togglTime = roundUp(entry.duration, config.roundMinutes);
 
             var dateString = toJiraWhateverDateTime(entry.start);
             var dateKey = createDateKey(entry.start);
@@ -233,6 +234,26 @@ function fetchEntries() {
 
         renderList();
     });
+}
+
+/**
+* Round duration up to next `minutes`.
+* No rounding will be applied if minutes is zero.
+* 
+* Example: round to next quater:
+*  roundUp(22, 15) = 30 // rounded to the next quarter
+*  roundUp(35, 60) = 60 // round to full hour
+*  roundUp(11, 0) = 11 // ignored rounding
+*/
+function roundUp(initialDuration, rounding_minutes) {
+    var minutesDuration = initialDuration / 60
+    if (minutesDuration == 0) {
+        return initialDuration;
+    } else {
+        // make sure minium `minutes` are tracked
+        var roundedDuration = (Math.floor(minutesDuration / rounding_minutes) + 1) * rounding_minutes;
+        return roundedDuration * 60;
+    }
 }
 
 function toJiraWhateverDateTime(date) {
